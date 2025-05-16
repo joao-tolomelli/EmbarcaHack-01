@@ -1,0 +1,145 @@
+openapi: 3.0.0
+info:
+  title: API de Medicações para Idosos
+  version: 1.0.0
+  description: Plataforma para lembrar idosos de tomarem suas medicações e registrar
+    confirmações.
+servers:
+- url: http://localhost:3000/api
+paths:
+  /medicamentos:
+    get:
+      summary: Lista todos os medicamentos cadastrados
+      tags:
+      - Web Interface
+      responses:
+        '200':
+          description: Lista de medicamentos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Medicamento'
+    post:
+      summary: Cria um novo medicamento
+      tags:
+      - Web Interface
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicamentoInput'
+      responses:
+        '201':
+          description: Medicamento criado com sucesso
+  /medicamentos/{id}:
+    put:
+      summary: Atualiza um medicamento existente
+      tags:
+      - Web Interface
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicamentoInput'
+      responses:
+        '200':
+          description: Medicamento atualizado com sucesso
+    delete:
+      summary: Deleta um medicamento
+      tags:
+      - Web Interface
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '204':
+          description: Medicamento deletado com sucesso
+  /medicamentos/proximos/{pacienteId}:
+    get:
+      summary: Retorna medicamentos agendados para a próxima hora
+      tags:
+      - Sistema Embarcado
+      parameters:
+      - name: pacienteId
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Lista de medicamentos agendados para a próxima hora
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Medicamento'
+  /medicamentos/status/{id}:
+    put:
+      summary: Atualiza o status do medicamento (ingerido ou ignorado)
+      tags:
+      - Sistema Embarcado
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                  - ingerido
+                  - ignorado
+      responses:
+        '200':
+          description: Status do medicamento atualizado
+components:
+  schemas:
+    Medicamento:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+        time:
+          type: string
+          example: 08:00
+        status:
+          type: string
+          enum:
+          - pendente
+          - ingerido
+          - ignorado
+    MedicamentoInput:
+      type: object
+      properties:
+        name:
+          type: string
+        color:
+          type: string
+        time:
+          type: string
+          example: 08:00
