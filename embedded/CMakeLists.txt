@@ -100,6 +100,22 @@ target_link_libraries( FreeRTOS-Kernel PUBLIC
         hardware_exception
         hardware_irq
         hardware_sync
+
+        # TLS library
+        #
+        #   Required for HTTPS (= TCP + TLS + HTTP).
+        #
+        #   A port of the Mbed TLS library is included in lwIP, and therefore in
+        #   the Pico SDK. __N.b. this is not a full MbedTLS distribution__, but
+        #   rather simply provides an lwIP compatible interface to Mbed TLS.
+        pico_lwip_mbedtls
+
+        #
+        #   A full Mbed TLS distributiom is however included in the Pico SDK
+        #   (currently as a submodule). This is currently (Pico SDK 1.5.0) not well
+        #   documented however.
+        pico_mbedtls                                 # mbedtls distributed with pico-sdk
+
 )
 target_include_directories( FreeRTOS-Kernel PUBLIC 
         ${FREERTOS_KERNEL_PATH}/include

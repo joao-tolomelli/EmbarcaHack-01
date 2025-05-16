@@ -98,4 +98,144 @@ static bool start_fft_filter();
 
 static bool start_fft_filter();
 
+// HTTP server hostname
+#define PICOHTTPS_HOSTNAME                          "example.edu"
+
+// DNS response polling interval
+//
+//  Interval with which to poll for responses to DNS queries.
+//
+#define PICOHTTPS_RESOLVE_POLL_INTERVAL             100             // ms
+
+// Certificate authority root certificate
+//
+//  CA certificate used to sign the HTTP server's certificate. DER or PEM
+//  formats (char array representation).
+//
+//  This is most readily obtained via inspection of the server's certificate
+//  chain, e.g. in a browser.
+//
+#define PICOHTTPS_CA_ROOT_CERT                          \
+{                                                       \
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,     \
+    0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f      \
+}
+//
+//  or
+//
+//#define PICOHTTPS_CA_ROOT_CERT                                       \
+//"-----BEGIN CERTIFICATE-----\n"                                      \
+//"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/\n" \
+//"-----END CERTIFICATE-----\n"
+
+// TCP + TLS connection establishment polling interval
+//
+//  Interval with which to poll for establishment of TCP + TLS connection
+//
+#define PICOHTTPS_ALTCP_CONNECT_POLL_INTERVAL       100             // ms
+
+// TCP + TLS idle connection polling interval
+//
+//  Interval with which to poll application (i.e. call registered polling
+//  callback function) when TCP + TLS connection is idle.
+//
+//  The callback function should be registered with altcp_poll(). The polling
+//  interval is given in units of 'coarse grain timer shots'; one shot
+//  corresponds to approximately 500 ms.
+//
+//  https://www.nongnu.org/lwip/2_1_x/group__altcp.html
+//
+#define PICOHTTPS_ALTCP_IDLE_POLL_INTERVAL          2               // shots
+
+// HTTP request
+//
+//  Plain-text HTTP request to send to server
+//
+#define PICOHTTPS_REQUEST                   \
+    "GET / HTTP/1.1\r\n"                    \
+    "Host: " PICOHTTPS_HOSTNAME "\r\n"      \
+    "\r\n"
+
+
+// HTTP response polling interval
+//
+//  Interval with which to poll for HTTP response from server.
+//
+#define PICOHTTPS_HTTP_RESPONSE_POLL_INTERVAL       100             // ms
+
+// Mbed TLS debug levels
+//
+//  Seemingly not defined in Mbed TLS‽
+//
+//  https://github.com/Mbed-TLS/mbedtls/blob/62e79dc913325a18b46aaea554a2836a4e6fc94b/include/mbedtls/debug.h#L141
+//
+#define PICOHTTPS_MBEDTLS_DEBUG_LEVEL               3
+
+
+/* Macros *********************************************************************/
+
+// Array length
+#define LEN(array) (sizeof array)/(sizeof array[0])
+
+
+
+/* Data structures ************************************************************/
+
+// lwIP errors
+//
+//  typedef here to make source of error code more explicit
+//
+typedef err_t lwip_err_t;
+
+// Mbed TLS errors
+//
+//  typedef here to make source of error code more explicit
+//
+typedef int mbedtls_err_t;
+
+// TCP connection callback argument
+//
+//  All callbacks associated with lwIP TCP (+ TLS) connections can be passed a
+//  common argument. This is intended to allow application state to be accessed
+//  from within the callback context. The argument should be registered with
+//  altcp_arg().
+//
+//  The following structure is used for this argument in order to supply all
+//  the relevant application state required by the various callbacks.
+//
+//  https://www.nongnu.org/lwip/2_1_x/group__altcp.html
+//
+struct altcp_callback_arg{
+
+    // TCP + TLS connection configurtaion
+    //
+    //  Memory allocated to the connection configuration structure needs to be
+    //  freed (with altcp_tls_free_config) in the connection error callback
+    //  (callback_altcp_err).
+    //
+    //  https://www.nongnu.org/lwip/2_1_x/group__altcp.html
+    //  https://www.nongnu.org/lwip/2_1_x/group__altcp__tls.html
+    //
+    struct altcp_tls_config* config;
+
+    // TCP + TLS connection state
+    //
+    //  Successful establishment of a connection needs to be signaled to the
+    //  application from the connection connect callback
+    //  (callback_altcp_connect).
+    //
+    //  https://www.nongnu.org/lwip/2_1_x/group__altcp.html
+    //
+    bool connected;
+
+    // Data reception acknowledgement
+    //
+    //  The amount of data acknowledged as received by the server needs to be
+    //  communicated to the application from the connection sent callback
+    //  (callback_altcp_sent) for validatation of successful transmission.
+    //
+    u16_t acknowledged;
+
+};
+
 #endif
