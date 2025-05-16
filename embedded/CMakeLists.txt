@@ -52,9 +52,9 @@ pico_sdk_init()
 add_executable(${PROJECT_NAME} main.c  
         inc/neopixel.c
         inc/ssd1306_i2c.c
-        tasks/freeRTOS_helpers.c
         tasks/task_adc_with_dma.c
         tasks/task_display_oled.c
+        tasks/task_vu_leds.c
         tasks/task_http_server.c 
 )
 
