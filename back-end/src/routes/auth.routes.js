@@ -1,21 +1,20 @@
-// routes/auth.router.js
-import { Router } from 'express';
-import {
-  loginUser,
-  registerUser,
-  getUserProfile
-} from '../controllers/auth.controller.js';
-import { verifyToken } from '../middleware/auth.middleware.js';
+// src/routes/auth.routes.js
+import express from 'express';
+import { register, login } from '../controllers/auth.controller.js';
+import jwtMiddleware from '../middleware/jwt.middleware.js';
 
-const router = Router();
+const router = express.Router();
 
-// Rota pública para login
-router.post('/login', loginUser);
+// Rota de registro
+router.post('/register', register);
 
-// Rota pública para registro
-router.post('/register', registerUser);
+// Rota de login
+router.post('/login', login);
 
-// Rota protegida para dados do usuário autenticado
-router.get('/me', verifyToken, getUserProfile);
+// Rota protegida que retorna os dados do usuário logado
+router.get('/me', jwtMiddleware, (req, res) => {
+  const { id, email, profile } = req.user;
+  res.json({ id, email, profile });
+});
 
 export default router;
