@@ -42,7 +42,8 @@ export async function register(req, res) {
   const { name, email, password, profile = 3 } = req.body;
 
   // Verifica se o perfil é válido (entre 0 e 3)
-  if (![0, 1, 2, 3].includes(profile)) {
+  // 0 = admin, 1 = medico, 2 = farmaceutico, 3 = familiar, 4 = paciente
+  if (![0, 1, 2, 3, 4].includes(profile)) {
     return res.status(400).json({ message: 'Perfil de usuário inválido' });
   }
 
