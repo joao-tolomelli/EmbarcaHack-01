@@ -55,7 +55,7 @@ jobs:
 
       - name: ⚙️ Criar estrutura do banco
         run: |
-          mysql -h127.0.0.1 -uroot -proot remedios_db < ./SQL/remedios_db.sql
+          mysql -h127.0.0.1 -uroot -proot remedios_db < ./back-end/SQL/remedios_db.sql
 
       - name: ✅ Rodar testes
-        run: npm test
+        run: cd back-end && npm test
