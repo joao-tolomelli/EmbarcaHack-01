@@ -5,16 +5,22 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import apiRoutes from './routes/api.routes.js';
-import authRoutes from './routes/auth.routes.js';
+
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Suporte a __dirname com ESModules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const swaggerDocument = YAML.load(path.join(__dirname, '../swagger/openapi-medicamentos.yaml'));
+
+// rota de documentação
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Middlewares
 app.use(cors());
@@ -22,7 +28,6 @@ app.use(express.json());
 
 // Importar e montar rotas da API
 // Montar rotas da API
-app.use('/api/v1/auth', authRoutes);  // <-- Adicionamos essa linha
 app.use('/api/v1', apiRoutes);        // Mantemos a anterior
 
 // Servir arquivos estáticos do frontend

@@ -1,120 +1,59 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
-  title: API de Medicações para Idosos
-  version: 1.0.0
-  description: Plataforma para lembrar idosos de tomarem suas medicações e registrar
-    confirmações.
+  title: API de Controle de Medicamentos
+  description: >
+    Sistema para controle de medicamentos voltado a pessoas idosas, com controle de perfis (médico, farmacêutico, familiar e beneficiário).
+  version: 0.1.0
+  contact:
+    name: Carlos Delfino
+    email: consultoria@carlosdelfino.eti.br
+
 servers:
-- url: http://localhost:3000/api
-paths:
-  /medicamentos:
-    get:
-      summary: Lista todos os medicamentos cadastrados
-      tags:
-      - Web Interface
-      responses:
-        '200':
-          description: Lista de medicamentos
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Medicamento'
-    post:
-      summary: Cria um novo medicamento
-      tags:
-      - Web Interface
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MedicamentoInput'
-      responses:
-        '201':
-          description: Medicamento criado com sucesso
-  /medicamentos/{id}:
-    put:
-      summary: Atualiza um medicamento existente
-      tags:
-      - Web Interface
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MedicamentoInput'
-      responses:
-        '200':
-          description: Medicamento atualizado com sucesso
-    delete:
-      summary: Deleta um medicamento
-      tags:
-      - Web Interface
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-      responses:
-        '204':
-          description: Medicamento deletado com sucesso
-  /medicamentos/proximos/{pacienteId}:
-    get:
-      summary: Retorna medicamentos agendados para a próxima hora
-      tags:
-      - Sistema Embarcado
-      parameters:
-      - name: pacienteId
-        in: path
-        required: true
-        schema:
-          type: integer
-      responses:
-        '200':
-          description: Lista de medicamentos agendados para a próxima hora
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Medicamento'
-  /medicamentos/status/{id}:
-    put:
-      summary: Atualiza o status do medicamento (ingerido ou ignorado)
-      tags:
-      - Sistema Embarcado
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                status:
-                  type: string
-                  enum:
-                  - ingerido
-                  - ignorado
-      responses:
-        '200':
-          description: Status do medicamento atualizado
+  - url: http://localhost:3000/api/v1
+    description: Servidor local
+
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        profile:
+          type: integer
+          description: 0 = médico, 1 = farmacêutico, 2 = familiar, 3 = beneficiário
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    RegisterInput:
+      allOf:
+        - $ref: '#/components/schemas/LoginInput'
+        - type: object
+          required: [name]
+          properties:
+            name:
+              type: string
+            profile:
+              type: integer
+              enum: [0, 1, 2, 3]
+
     Medicamento:
       type: object
       properties:
@@ -126,15 +65,16 @@ components:
           type: string
         time:
           type: string
-          example: 08:00
+          format: time
         status:
           type: string
-          enum:
-          - pendente
-          - ingerido
-          - ignorado
+          enum: [pendente, ingerido, ignorado]
+        paciente_id:
+          type: integer
+
     MedicamentoInput:
       type: object
+      required: [name, color, time]
       properties:
         name:
           type: string
@@ -142,4 +82,166 @@ components:
           type: string
         time:
           type: string
-          example: 08:00
+          format: time
+          example: "08:00"
+
+    StatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [pendente, ingerido, ignorado]
+
+paths:
+
+  /auth/register:
+    post:
+      tags: [Autenticação]
+      summary: Registra um novo usuário
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterInput'
+      responses:
+        '201':
+          description: Usuário criado com sucesso
+        '400':
+          description: Dados inválidos ou e-mail já registrado
+        '500':
+          description: Erro interno no servidor
+
+  /auth/login:
+    post:
+      tags: [Autenticação]
+      summary: Autentica um usuário e retorna um token JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+      responses:
+        '200':
+          description: Token JWT gerado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        '401':
+          description: Credenciais inválidas
+        '500':
+          description: Erro interno no servidor
+
+  /auth/me:
+    get:
+      tags: [Autenticação]
+      summary: Retorna os dados do usuário logado
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Dados do usuário autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Token ausente ou inválido
+
+  /medicamentos:
+    get:
+      tags: [Medicamentos]
+      summary: Lista todos os medicamentos
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lista de medicamentos cadastrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Medicamento'
+        '401':
+          description: Acesso não autorizado
+
+    post:
+      tags: [Medicamentos]
+      summary: Cadastra um novo medicamento
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicamentoInput'
+      responses:
+        '201':
+          description: Medicamento criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Medicamento'
+        '400':
+          description: Dados inválidos
+        '403':
+          description: Perfil sem permissão (ex: beneficiário)
+        '401':
+          description: Token ausente ou inválido
+
+  /medicamentos/{id}:
+    put:
+      tags: [Medicamentos]
+      summary: Atualiza um medicamento existente
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicamentoInput'
+      responses:
+        '204':
+          description: Atualizado com sucesso (sem conteúdo)
+        '403':
+          description: Acesso negado ao recurso
+        '404':
+          description: Medicamento não encontrado
+        '401':
+          description: Token ausente ou inválido
+
+    delete:
+      tags: [Medicamentos]
+      summary: Remove um medicamento
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Removido com sucesso
+        '403':
+          description: Acesso negado
+        '404':
+          description: Medicamento não encontrado
+        '401':
+          description: Token ausente ou inválido
