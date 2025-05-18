@@ -1,0 +1,61 @@
+name: Testes Automatizados Backend
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  run-tests:
+    name: Executar Testes com Node.js
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: remedios_db
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: remedios_db
+      JWT_SECRET: teste123
+
+    steps:
+      - name: 🔄 Clonar repositório
+        uses: actions/checkout@v4
+
+      - name: 🟢 Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: 📦 Instalar dependências
+        run: npm ci
+
+      - name: 🛠️ Esperar o MySQL subir
+        run: |
+          echo "Aguardando MySQL..."
+          for i in {1..30}; do
+            nc -z 127.0.0.1 3306 && echo "MySQL pronto!" && break
+            sleep 2
+          done
+
+      - name: ⚙️ Criar estrutura do banco
+        run: |
+          mysql -h127.0.0.1 -uroot -proot remedios_db < ./SQL/remedios_db.sql
+
+      - name: ✅ Rodar testes
+        run: npm test
