@@ -6,6 +6,8 @@ import InputBox from "./Components/InputBox";
 import axios from "axios";
 
 function App() {
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   const [medicines, setMedicines] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ name: "", color: "", time: "" });
@@ -23,7 +25,7 @@ function App() {
 
   const fetchHomeData = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/medicines");
+      const response = await axios.get(`${BASE_URL}/medicines`);
       setMedicines(response.data);
     } catch (error) {
       console.error("Erro ao buscar dados da home:", error);
@@ -32,7 +34,7 @@ function App() {
 
   const scheduleMedicines = async () => {
     try {
-      await axios.post("http://localhost:3000/medicines", formData);
+      await axios.post(`${BASE_URL}/medicines`, formData);
       console.log("Medicamento registrado com sucesso!");
       await fetchHomeData();
     } catch (error) {
@@ -43,7 +45,7 @@ function App() {
   const updateMedicines = async (id) => {
     try {
       const formToSend = { ...formData, id };
-      await axios.put(`http://localhost:3000/medicines/${id}`, formToSend);
+      await axios.put(`${BASE_URL}/medicines/${id}`, formToSend);
       console.log("Medicamento atualizado com sucesso!");
       await fetchHomeData();
     } catch (error) {
@@ -53,7 +55,7 @@ function App() {
 
   const deleteMedicine = async (id) => {
     try {
-      await axios.delete(`http://localhost:3000/medicines/${id}`);
+      await axios.delete(`${BASE_URL}/medicines/${id}`);
       await fetchHomeData();
       console.log("Medicamento deletado com sucesso!");
     } catch (error) {
