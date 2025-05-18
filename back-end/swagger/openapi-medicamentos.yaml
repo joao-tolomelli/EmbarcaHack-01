@@ -245,3 +245,60 @@ paths:
           description: Medicamento não encontrado
         '401':
           description: Token ausente ou inválido
+
+  /medicamentos/status/{id}:
+    put:
+      tags: [Medicamentos]
+      summary: Atualiza o status do medicamento
+      description: Atualiza o campo `status` para "ingerido", "ignorado" ou "pendente"
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusUpdate'
+      responses:
+        '204':
+          description: Status atualizado com sucesso
+        '400':
+          description: Status inválido
+        '403':
+          description: Usuário não autorizado a alterar este medicamento
+        '404':
+          description: Medicamento não encontrado
+        '401':
+          description: Token ausente ou inválido
+
+  /medicamentos/proximos/{pacienteId}:
+    get:
+      tags: [Medicamentos]
+      summary: Lista medicamentos agendados para a próxima hora
+      description: Retorna todos os medicamentos do paciente com hora marcada dentro da próxima hora.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de medicamentos próximos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Medicamento'
+        '401':
+          description: Token ausente ou inválido
+
