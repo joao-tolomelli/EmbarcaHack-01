@@ -1,7 +1,6 @@
 #ifndef REMEDIOS_DB_H
 #define REMEDIOS_DB_H
 
-#include "ssd1306_i2c.h"
 
 // Parâmetros e macros do I2C.
 #define I2C_SDA  14

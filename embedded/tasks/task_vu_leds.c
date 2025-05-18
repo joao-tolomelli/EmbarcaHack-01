@@ -7,8 +7,9 @@
 
 #include "inc/neopixel.h"
 
-#include "inc/magnectostriccao.h"
-#include "tasks_paramiters.h"
+#include "remedios_db.h"
+
+#include "tasks/tasks_parameters.h"   // carrega parâmetros das tarefas
 #include "task_vu_leds.h"
 
 extern QueueHandle_t xIntensity_Buffer_Queue;

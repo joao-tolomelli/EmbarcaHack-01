@@ -29,29 +29,30 @@
 #include "inc/neopixel.h"
 
 // lwIP
-#include "lwip/dns.h"               // Hostname resolution
-#include "lwip/altcp_tls.h"         // TCP + TLS (+ HTTP == HTTPS)
-#include "altcp_tls_mbedtls_structs.h"
+#include "lwip/altcp.h"
+#include "lwip/altcp_tls.h"
+#include "lwip/ip_addr.h"
+#include "lwip/dns.h"
+#include "lwip/init.h"
+#include "lwip/pbuf.h"
 #include "lwip/prot/iana.h"         // HTTPS port number
 
 // Mbed TLS
 #include "mbedtls/ssl.h"            // Server Name Indication TLS extension
-#include "remedios_db.h"
+#include "lwip/apps/altcp_tls_mbedtls_opts.h"
+#include "apps/altcp_tls/altcp_tls_mbedtls_structs.h"
+
 #ifdef MBEDTLS_DEBUG_C
 #include "mbedtls/debug.h"          // Mbed TLS debugging
 #endif //MBEDTLS_DEBUG_C
 #include "mbedtls/check_config.h"
 
-#include "inc/remedios_db.h"   // Carrega parametros gerais do sistema
-#include "tasks/tasks_parameters.h" // parametros para criação das tasks
+#include "remedios_db.h"
 
+#include "tasks/tasks_parameters.h"   // carrega parâmetros das tarefas
 #include "tasks/task_adc_with_dma.h"  // carrega tarefas do ADC
 #include "tasks/task_display_oled.h"  // Carrega tarefas do display
-#include "tasks/task_drone_control.h" // Carrega tarefas do controle de drone
-#include "tasks/task_tinyML.h"        // Carrega tarefas do TinyML
-#include "tasks/task_fft_filter.h"    // Carrega tarefas do filtro FFT
 #include "tasks/task_http_server.h"   // Carrega tarefas do http server
-#include "tasks/task_fft_filter.h"    // Carrega tarefas do filtro FFT
 #include "tasks/task_vu_leds.h"       // Carrega tarefas do leds de volume
 #include "main.h"                     // carrega cabeçalhos do main
 
@@ -67,13 +68,9 @@ extern uint8_t ssd[ssd1306_buffer_length];
 // Buffer de amostras do ADC.
 static uint32_t last_time;
 // flag que indica se o controle do drone é local ou remoto
-bool modo_local = false;
-// aceleração obitida no servidor restfull
-int aceleration_x;
-int aceleration_y;
 
-QueueHandle_t xFFT_Buffer_Queue = NULL;
-QueueHandle_t xTinyML_Buffer_Queue = NULL;
+ip_addr_t ipaddr;
+
 QueueHandle_t xIntensity_Buffer_Queue = NULL;
 
 int main()
@@ -106,7 +103,7 @@ int main()
 
   sleep_ms(INTER_SCREEN_DELAY);
 
-  if (!start_gpio_and_drone_control())
+  if (!start_gpio())
     return 1;
 
   sleep_ms(INTER_SCREEN_DELAY);
@@ -414,6 +411,46 @@ bool start_ADC_with_DMA()
 }
 
 /**
+ * @brief Inicializa e verifica atuadores e sensores do drone.
+ *
+ * @details
+ *  - Exibe mensagens de inicializacao na tela.
+ *  - Cria a task task_drone_control que ira controlar o drone.
+ *
+ * @see task_drone_control
+ */
+bool start_gpio()
+{
+  strcpy(text_line_oled[0], " Inicializando ");
+  strcpy(text_line_oled[1], "               ");
+  strcpy(text_line_oled[2], "               ");
+  strcpy(text_line_oled[3], "     GPIO      ");
+  strcpy(text_line_oled[4], "               ");
+  strcpy(text_line_oled[5], " DRONE CONTROL ");
+  strcpy(text_line_oled[6], "               ");
+  strcpy(text_line_oled[7], "               ");
+
+  uint8_t y = 0;
+  for (uint i = 0; i < count_of(text_line_oled); i++)
+  {
+    ssd1306_draw_string(ssd, 5, y, text_line_oled[i]);
+    y += ssd1306_line_height;
+  }
+  render_on_display(ssd, &frame_area);
+
+  /////////////////////////////////////////////////////////
+  // inicializa e verifica atuadores e sensores do drone //
+  /////////////////////////////////////////////////////////
+
+  // ativa adc do joistick
+  adc_gpio_init(26);
+  adc_gpio_init(27);
+ 
+  return true;
+}
+
+
+/**
  * @brief Exibe mensagens de inicializacao e inicializa o VU de LEDs.
  *
  * @details
@@ -711,7 +748,7 @@ bool start_network_infrastructure()
     strcpy(text_line_oled[6], "     REDE      ");
     strcpy(text_line_oled[7], "               ");
 
-    uint8_t y = 0;
+    y = 0;
     for (uint i = 0; i < count_of(text_line_oled); i++)
     {
       ssd1306_draw_string(ssd, 5, y, text_line_oled[i]);
@@ -763,7 +800,7 @@ bool start_network_infrastructure()
   strcpy(text_line_oled[6], "     REDE      ");
   strcpy(text_line_oled[7], "               ");
 
-  uint8_t y = 0;
+  y = 0;
   for (uint i = 0; i < count_of(text_line_oled); i++)
   {
     ssd1306_draw_string(ssd, 5, y, text_line_oled[i]);
@@ -798,7 +835,7 @@ bool start_network_infrastructure()
     altcp_free_pcb(pcb);            // Free connection PCB
                                     // TODO: Disconnect from network
     cyw43_arch_deinit();            // Deinit Pico W wireless hardware
-    return;
+    return false;
   }
   printf("Request sent\n");
 
@@ -967,39 +1004,19 @@ static err_t http_callback(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_
   }
   else if (strstr(request, "POST /aceleration/xy"))
   {
-    if (!modo_local)
-    {
-      // obtem na requisição a posição x e y desejada
-      // aceleration_x = x;
-      // aceleration_y = y;
-    }
-
     // Envia a resposta HTTP
     create_http_response();
     tcp_write(tpcb, http_response, strlen(http_response), TCP_WRITE_FLAG_COPY);
   }
   else if (strstr(request, "POST /aceleration/x"))
   {
-    // obtem na requisição o valor do eixo X
-    if (!modo_local)
-    {
-      // obtem na requisição a posição x desejada
-      // aceleration_x = x;
-    }
-
     // Envia a resposta HTTP
     create_http_response();
     tcp_write(tpcb, http_response, strlen(http_response), TCP_WRITE_FLAG_COPY);
   }
   else if (strstr(request, "POST /aceleration/y"))
   {
-    // obtem na requisição o valor do eixo Y
-    if (!modo_local)
-    {
-      // obtem na requisição a posição y desejada
-      // aceleration_y = y;
-    }
-
+   
     // Envia a resposta HTTP
     create_http_response();
     tcp_write(tpcb, http_response, strlen(http_response), TCP_WRITE_FLAG_COPY);
@@ -1065,15 +1082,12 @@ static void monitor_buttons_callback(unsigned int gpio, long unsigned int events
     if (button_B_state)
     {
       snprintf(button_B_message, sizeof(button_B_message), "Botão B foi pressionado!");
-      modo_local = !modo_local;
-      if (modo_local)
-        strcpy(text_line_oled[7], "   modo local  ");
-      else
-        strcpy(text_line_oled[7], "  modo remoto  ");
+      strcpy(text_line_oled[7], "Botão B pressionado!");
     }
     else
     {
       snprintf(button_B_message, sizeof(button_B_message), "Botão B foi solto!");
+      strcpy(text_line_oled[7], "Botão B Solto!");
     }
   }
 }
@@ -1446,3 +1460,4 @@ lwip_err_t callback_altcp_connect(
   ((struct altcp_callback_arg*)arg)->connected = true;
   return ERR_OK;
 }
+

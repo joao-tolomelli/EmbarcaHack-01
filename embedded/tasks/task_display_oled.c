@@ -15,10 +15,13 @@
 #include "string.h"
 #include "pico/stdlib.h"
 
-#include "task_display_oled.h"
-#include "tasks_paramiters.h"
-
 #include "inc/ssd1306.h"
+
+#include "remedios_db.h"
+
+#include "tasks/tasks_parameters.h"   // carrega parâmetros das tarefas
+
+#include "task_display_oled.h"
 
 extern QueueHandle_t xIntensity_Buffer_Queue;
 

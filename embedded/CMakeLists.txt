@@ -47,6 +47,8 @@ project(remedios_db C CXX ASM)
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
+add_definitions(-DLWIP_ALTCP -DLWIP_ALTCP_TLS -DLWIP_ALTCP_TLS_MBEDTLS)
+
 # Add executable. Default name is the project name, version 0.1
 
 add_executable(${PROJECT_NAME} main.c  
@@ -71,6 +73,7 @@ pico_enable_stdio_usb(${PROJECT_NAME} 1)
 # Add the standard include files to the build
 target_include_directories(${PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
+        ${PICO_SDK_PATH}/lib/lwip/src/
 )
 
 include_directories(${INCLUDES})
@@ -101,21 +104,6 @@ target_link_libraries( FreeRTOS-Kernel PUBLIC
         hardware_irq
         hardware_sync
 
-        # TLS library
-        #
-        #   Required for HTTPS (= TCP + TLS + HTTP).
-        #
-        #   A port of the Mbed TLS library is included in lwIP, and therefore in
-        #   the Pico SDK. __N.b. this is not a full MbedTLS distribution__, but
-        #   rather simply provides an lwIP compatible interface to Mbed TLS.
-        pico_lwip_mbedtls
-
-        #
-        #   A full Mbed TLS distributiom is however included in the Pico SDK
-        #   (currently as a submodule). This is currently (Pico SDK 1.5.0) not well
-        #   documented however.
-        pico_mbedtls                                 # mbedtls distributed with pico-sdk
-
 )
 target_include_directories( FreeRTOS-Kernel PUBLIC 
         ${FREERTOS_KERNEL_PATH}/include
@@ -136,8 +124,24 @@ target_link_libraries( ${PROJECT_NAME}
     hardware_clocks
     hardware_exception
     hardware_irq
-    pico_cyw43_arch_lwip_threadsafe_background
     pico_stdlib 
+
+    pico_cyw43_arch_lwip_threadsafe_background
+
+    # TLS library
+    #
+    #   Required for HTTPS (= TCP + TLS + HTTP).
+    #
+    #   A port of the Mbed TLS library is included in lwIP, and therefore in
+    #   the Pico SDK. __N.b. this is not a full MbedTLS distribution__, but
+    #   rather simply provides an lwIP compatible interface to Mbed TLS.
+    pico_lwip_mbedtls
+    
+    #   A full Mbed TLS distributiom is however included in the Pico SDK
+    #   (currently as a submodule). This is currently (Pico SDK 1.5.0) not well
+    #   documented however.
+    pico_mbedtls                                 # mbedtls distributed with pico-sdk
+
 )
 target_compile_definitions(${PROJECT_NAME}  PRIVATE
         mainRUN_FREE_RTOS_ON_CORE=1

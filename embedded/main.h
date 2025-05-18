@@ -84,7 +84,6 @@ static err_t connection_callback(void *arg, struct tcp_pcb *newpcb, err_t err);
 static void monitor_buttons_callback(unsigned int gpio, long unsigned int events);
 
 static void show_intro();
-static bool start_gpio_and_drone_control();
 static bool start_network_infrastructure();
 static void start_bottons_control();
 static bool start_VU_LED();
@@ -93,10 +92,6 @@ static bool start_display_oled();
 static void init_display_oled();
 
 static bool start_ADC_with_DMA();
-static bool start_tinyML();
-static bool start_fft_filter();
-
-static bool start_fft_filter();
 
 // HTTP server hostname
 #define PICOHTTPS_HOSTNAME                          "example.edu"
@@ -238,4 +233,30 @@ struct altcp_callback_arg{
 
 };
 
+void altcp_free_config(struct altcp_tls_config* config);
+bool resolve_hostname(ip_addr_t* ipaddr);
+bool connect_to_host(ip_addr_t* ipaddr, struct altcp_pcb** pcb);
+bool send_request(struct altcp_pcb* pcb);
+bool start_gpio(void);
+lwip_err_t callback_altcp_recv(
+  void* arg,
+  struct altcp_pcb* pcb,
+  struct pbuf* buf,
+  lwip_err_t err
+);
+lwip_err_t callback_altcp_connect(
+  void* arg,
+  struct altcp_pcb* pcb,
+  lwip_err_t err
+);
+lwip_err_t callback_altcp_poll(void* arg, struct altcp_pcb* pcb);
+lwip_err_t callback_altcp_sent(void* arg, struct altcp_pcb* pcb, u16_t len);
+void callback_gethostbyname(
+  const char* name,
+  const ip_addr_t* resolved,
+  void* ipaddr
+);
+void callback_altcp_err(void* arg, lwip_err_t err);
+void altcp_free_arg(struct altcp_callback_arg* arg);
+void altcp_free_pcb(struct altcp_pcb* pcb);
 #endif

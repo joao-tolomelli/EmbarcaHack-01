@@ -7,7 +7,10 @@
 
 #include "pico/cyw43_arch.h"
 
-#include "tasks_paramiters.h"
+#include "remedios_db.h"
+
+#include "tasks/tasks_parameters.h"   // carrega parâmetros das tarefas
+
 #include "task_http_server.h"
 
 void task_http_server(void *pvParameters) {

@@ -14,8 +14,11 @@
 #include <math.h>
 #include <string.h>
 
-#include "inc/magnectostriccao.h"
-#include "tasks_paramiters.h"
+#include "inc/ssd1306.h"
+
+#include "remedios_db.h"
+
+#include "tasks_parameters.h"   // carrega parâmetros das tarefas
 #include "task_adc_with_dma.h"
 
 extern QueueHandle_t xFFT_Buffer_Queue;
@@ -88,11 +91,6 @@ void task_adc_with_dma(void *pvParameters)
     sample_mic();
     printf("Passou sample mic\n");
     
-    if(xQueueSendToBack(xFFT_Buffer_Queue, adc_buffer, ADC_TO_FFT_QUEUE_TIMEOUT) != pdPASS)
-    {
-      printf("ADC: Erro ao enviar buffer de amostragem\n");
-    };
-
     // realiza a exibição do status da coleta de ruidos
     // Pega a potência média da amostragem do microfone.
     float avg = mic_power();
