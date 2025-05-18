@@ -130,6 +130,7 @@ int main()
   }
   render_on_display(ssd, &frame_area);
 
+  printf("Starting RTOS scheduler\n");
   vTaskStartScheduler();
 
   return 0;
@@ -378,35 +379,35 @@ bool start_ADC_with_DMA()
   render_on_display(ssd, &frame_area);
 
   xIntensity_Buffer_Queue = xQueueCreate(ADC_INTENSITY_QUEUE_LENGTH, (UBaseType_t)sizeof(uint));
-  BaseType_t xReturn = xTaskCreate(
-      task_adc_with_dma,
-      "Task ADC com DMA",
-      TASK_ADC_DMA_STACK_SIZE,
-      NULL,
-      TASK_ADC_DMA_PRIORITY,
-      NULL);
-  if (xReturn != pdPASS)
-  {
-    strcpy(text_line_oled[0], "     FALHA     ");
-    strcpy(text_line_oled[1], " AO CRIAR TASK ");
-    strcpy(text_line_oled[2], "      RTOS     ");
-    strcpy(text_line_oled[3], "               ");
-    strcpy(text_line_oled[4], "               ");
-    strcpy(text_line_oled[5], "  ADC COM DMA  ");
-    strcpy(text_line_oled[6], "               ");
-    strcpy(text_line_oled[7], "               ");
+  // BaseType_t xReturn = xTaskCreate(
+  //     task_adc_with_dma,
+  //     "Task ADC com DMA",
+  //     TASK_ADC_DMA_STACK_SIZE,
+  //     NULL,
+  //     TASK_ADC_DMA_PRIORITY,
+  //     NULL);
+  // if (xReturn != pdPASS)
+  // {
+  //   strcpy(text_line_oled[0], "     FALHA     ");
+  //   strcpy(text_line_oled[1], " AO CRIAR TASK ");
+  //   strcpy(text_line_oled[2], "      RTOS     ");
+  //   strcpy(text_line_oled[3], "               ");
+  //   strcpy(text_line_oled[4], "               ");
+  //   strcpy(text_line_oled[5], "  ADC COM DMA  ");
+  //   strcpy(text_line_oled[6], "               ");
+  //   strcpy(text_line_oled[7], "               ");
 
-    uint8_t y = 0;
-    for (uint i = 0; i < count_of(text_line_oled); i++)
-    {
-      ssd1306_draw_string(ssd, 5, y, text_line_oled[i]);
-      y += ssd1306_line_height;
-    }
-    render_on_display(ssd, &frame_area);
+  //   uint8_t y = 0;
+  //   for (uint i = 0; i < count_of(text_line_oled); i++)
+  //   {
+  //     ssd1306_draw_string(ssd, 5, y, text_line_oled[i]);
+  //     y += ssd1306_line_height;
+  //   }
+  //   render_on_display(ssd, &frame_area);
 
-    sleep_ms(INTER_SCREEN_DELAY * 6);
-    return false;
-  }
+  //   sleep_ms(INTER_SCREEN_DELAY * 6);
+  //   return false;
+  // }
   return true;
 }
 
@@ -663,6 +664,7 @@ void start_bottons_control()
  */
 bool start_network_infrastructure()
 {
+  printf("Iniciando infraestrutura de rede\n");
   if (cyw43_arch_init_with_country(CYW43_COUNTRY_BRAZIL))
   {
     strcpy(text_line_oled[0], "    ATENCAO    ");
@@ -684,6 +686,7 @@ bool start_network_infrastructure()
     return false;
   }
 
+  printf("Infraestrutura de rede iniciada\n");
   cyw43_arch_enable_sta_mode();
   uint8_t count = 0;
   while (count < 3 && cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 10000) != 0)
@@ -706,6 +709,7 @@ bool start_network_infrastructure()
     sleep_ms(INTER_SCREEN_DELAY / (1.0 / 3));
   }
 
+  printf("Infraestrutura de rede conectada\n");
   if (count == 3)
     return false;
 
@@ -727,8 +731,10 @@ bool start_network_infrastructure()
   }
   render_on_display(ssd, &frame_area);
 
+  printf("Infraestrutura de rede, iniciando servidor HTTP\n");
   // Inicia o servidor HTTP
   start_http_server();
+  printf("Infraestrutura de rede, servidor HTTP iniciado\n");
   BaseType_t xReturn = xTaskCreate(
       task_http_server,
       "Task HTTP Server",
@@ -1090,6 +1096,7 @@ static void monitor_buttons_callback(unsigned int gpio, long unsigned int events
       strcpy(text_line_oled[7], "Botão B Solto!");
     }
   }
+  taskYIELD();
 }
 
 // Resolve hostname
@@ -1155,6 +1162,7 @@ void altcp_free_arg(struct altcp_callback_arg* arg){
 // Establish TCP + TLS connection with server
 bool connect_to_host(ip_addr_t* ipaddr, struct altcp_pcb** pcb){
 
+  printf("Connecting to %s\n", PICOHTTPS_HOSTNAME);
   // Instantiate connection configuration
   u8_t ca_cert[] = PICOHTTPS_CA_ROOT_CERT;
   cyw43_arch_lwip_begin();
@@ -1163,7 +1171,15 @@ bool connect_to_host(ip_addr_t* ipaddr, struct altcp_pcb** pcb){
       LEN(ca_cert)
   );
   cyw43_arch_lwip_end();
-  if(!config) return false;
+  if(!config) 
+  {
+    printf("Failed to create TCP + TLS connection configuration\n"); 
+    return false;
+  }
+  printf("TCP + TLS connection configuration created\n");
+
+  // Set debug level
+  //mbedtls_debug_set_threshold(4);
 
   // Instantiate connection PCB
   //
@@ -1182,9 +1198,11 @@ bool connect_to_host(ip_addr_t* ipaddr, struct altcp_pcb** pcb){
   *pcb = altcp_tls_new(config, IPADDR_TYPE_V4);
   cyw43_arch_lwip_end();
   if(!(*pcb)){
+      printf("Failed to create TCP + TLS connection protocol control block\n");
       altcp_free_config(config);
       return false;
   }
+  printf("TCP + TLS connection to %s established\n", PICOHTTPS_HOSTNAME);
 
   // Configure hostname for Server Name Indication extension
   //
@@ -1221,10 +1239,12 @@ bool connect_to_host(ip_addr_t* ipaddr, struct altcp_pcb** pcb){
   );
   cyw43_arch_lwip_end();
   if(mbedtls_err){
+      printf("Failed to set hostname [mbedtls_err == %d]\n", mbedtls_err);
       altcp_free_pcb(*pcb);
       altcp_free_config(config);
       return false;
   }
+  printf("Hostname set\n");
 
   // Configure common argument for connection callbacks
   //
@@ -1233,22 +1253,28 @@ bool connect_to_host(ip_addr_t* ipaddr, struct altcp_pcb** pcb){
   //  but rather should allocate on the heap. Must then ensure allocated
   //  memory is subsequently freed.
   //
-  struct altcp_callback_arg* arg = malloc(sizeof(*arg));
+  struct altcp_callback_arg* arg = malloc(sizeof(struct altcp_callback_arg));
   if(!arg){
+      printf("Failed to allocate argument\n");
       altcp_free_pcb(*pcb);
       altcp_free_config(config);
       return false;
   }
+  printf("Argument allocated\n");
+
+  printf("Connecting to %s\n", PICOHTTPS_HOSTNAME);
   arg->config = config;
   arg->connected = false;
   cyw43_arch_lwip_begin();
   altcp_arg(*pcb, (void*)arg);
   cyw43_arch_lwip_end();
+  printf("Argument set\n");
 
   // Configure connection fatal error callback
   cyw43_arch_lwip_begin();
   altcp_err(*pcb, callback_altcp_err);
   cyw43_arch_lwip_end();
+  printf("Fatal error callback set\n");
 
   // Configure idle connection callback (and interval)
   cyw43_arch_lwip_begin();
@@ -1258,16 +1284,19 @@ bool connect_to_host(ip_addr_t* ipaddr, struct altcp_pcb** pcb){
       PICOHTTPS_ALTCP_IDLE_POLL_INTERVAL
   );
   cyw43_arch_lwip_end();
+  printf("Idle callback set\n");
 
   // Configure data acknowledge callback
   cyw43_arch_lwip_begin();
   altcp_sent(*pcb, callback_altcp_sent);
   cyw43_arch_lwip_end();
+  printf("Acknowledge callback set\n");
 
   // Configure data reception callback
   cyw43_arch_lwip_begin();
   altcp_recv(*pcb, callback_altcp_recv);
   cyw43_arch_lwip_end();
+  printf("Reception callback set\n");
 
   // Send connection request (SYN)
   cyw43_arch_lwip_begin();
@@ -1278,6 +1307,7 @@ bool connect_to_host(ip_addr_t* ipaddr, struct altcp_pcb** pcb){
       callback_altcp_connect
   );
   cyw43_arch_lwip_end();
+  printf("Connection request sent\n");
 
   // Connection request sent
   if(lwip_err == ERR_OK){
@@ -1287,8 +1317,11 @@ bool connect_to_host(ip_addr_t* ipaddr, struct altcp_pcb** pcb){
       //  Sucessful connection will be confirmed shortly in
       //  callback_altcp_connect.
       //
-      while(!(arg->connected))
+      while(!(arg->connected)){
           sleep_ms(PICOHTTPS_ALTCP_CONNECT_POLL_INTERVAL);
+          printf(".");
+      }
+      printf("\n");
 
   } else {
 
@@ -1296,8 +1329,10 @@ bool connect_to_host(ip_addr_t* ipaddr, struct altcp_pcb** pcb){
       altcp_free_pcb(*pcb);
       altcp_free_config(config);
       altcp_free_arg(arg);
-
+      printf("Connection request failed [lwip_err == %d]\n", lwip_err);
+      return false;
   }
+  printf("Connection request sent\n");
 
   // Return
   return !((bool)lwip_err);
@@ -1457,7 +1492,12 @@ lwip_err_t callback_altcp_connect(
   struct altcp_pcb* pcb,
   lwip_err_t err
 ){
+  printf("Connection established\n");
   ((struct altcp_callback_arg*)arg)->connected = true;
   return ERR_OK;
 }
 
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {
+  printf("Stack overflow: %s\n", pcTaskName);
+  // Aqui você pode acionar LEDs, travar o sistema ou resetar.
+}

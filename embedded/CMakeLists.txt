@@ -127,7 +127,7 @@ target_link_libraries( ${PROJECT_NAME}
     pico_stdlib 
 
     pico_cyw43_arch_lwip_threadsafe_background
-
+    pico_cyw43_arch_lwip_threadsafe_background 
     # TLS library
     #
     #   Required for HTTPS (= TCP + TLS + HTTP).
@@ -143,6 +143,7 @@ target_link_libraries( ${PROJECT_NAME}
     pico_mbedtls                                 # mbedtls distributed with pico-sdk
 
 )
+
 target_compile_definitions(${PROJECT_NAME}  PRIVATE
         mainRUN_FREE_RTOS_ON_CORE=1
         PICO_STACK_SIZE=0x1000
