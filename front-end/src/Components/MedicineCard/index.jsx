@@ -1,6 +1,27 @@
-function MedicineCard({ medicine, setUpdateMedicine, deleteMedicine, state }) {
+function MedicineCard({ medicine, setUpdateMedicine, deleteMedicine }) {
+  const renderIcon = (status) => {
+    switch (status) {
+      case "ingerido":
+        return <i className="pi pi-check-circle text-green-700  text-base"></i>;
+      case "ignorado":
+        return (
+          <i className="pi pi-exclamation-triangle text-red-700 text-base"></i>
+        );
+      case "pendente":
+        return <i className="pi pi-clock text-gray-700 text-base"></i>;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="flex flex-row justify-between items-center bg-green-main text-white text-[.7rem] rounded-xl px-6 py-2">
+    <div
+      className={`flex flex-row justify-between items-center bg-green-main text-white text-[.7rem] rounded-xl px-6 py-2 ${
+        medicine.status === "ignorado" && !(setUpdateMedicine && deleteMedicine)
+          ? "border-2 border-red-700"
+          : ""
+      }`}
+    >
       <div className="flex flex-col font-normal gap-1">
         <span>Nome: {medicine.name}</span>
         <span>Cor: {medicine.color}</span>
@@ -16,13 +37,7 @@ function MedicineCard({ medicine, setUpdateMedicine, deleteMedicine, state }) {
           </div>
         </div>
       ) : (
-        <div>
-          {state ? (
-            <i className="pi pi-check-circle text-green-700  text-base"></i>
-          ) : (
-            <i className="pi pi-exclamation-triangle text-red-700 text-base"></i>
-          )}
-        </div>
+        <div>{renderIcon(medicine.status)}</div>
       )}
     </div>
   );
