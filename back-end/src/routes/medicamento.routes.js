@@ -19,7 +19,7 @@ import {
 
 const router = express.Router();
 
-router.use(jwtMiddleware);
+//router.use(jwtMiddleware);
 
 // GET /medicamentos (aberto a todos os usuários autenticados)
 router.get('/', getTodosMedicamentos);
@@ -27,7 +27,7 @@ router.get('/', getTodosMedicamentos);
 // POST /medicamentos (restrito)
 router.post(
   '/',
-  permitOnly(0, 1, 2),
+//  permitOnly(0, 1, 2),
   validate(medicamentoSchema),
   postMedicamento
 );
@@ -35,7 +35,7 @@ router.post(
 // PUT /medicamentos/:id (restrito)
 router.put(
   '/:id',
-  permitOnly(0, 1, 2),
+//  permitOnly(0, 1, 2),
   validate(medicamentoSchema),
   putMedicamento
 );
@@ -43,7 +43,7 @@ router.put(
 // DELETE /medicamentos/:id (restrito)
 router.delete(
   '/:id',
-  permitOnly(0, 1, 2),
+//  permitOnly(0, 1, 2),
   deleteMedicamento
 );
 
