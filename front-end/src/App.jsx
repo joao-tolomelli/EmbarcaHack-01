@@ -10,7 +10,15 @@ function App() {
 
   const [medicines, setMedicines] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ name: "", color: "", time: "" });
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    color: "",
+    time: "",
+    status: "pendente",
+  });
 
   const [formDataSettings, setFormDataSettings] = useState({
     action: "", // 'create' or 'update'
@@ -53,13 +61,21 @@ function App() {
     }
   };
 
-  const deleteMedicine = async (id) => {
+  const deleteMedicine = (id) => {
+    setPendingDeleteId(id);
+    setShowDeletePopup(true);
+  };
+
+  const confirmDelete = async () => {
     try {
-      await axios.delete(`${BASE_URL}/api/medicines/${id}`);
+      await axios.delete(`${BASE_URL}/api/medicines/${pendingDeleteId}`);
       await fetchHomeData();
       console.log("Medicamento deletado com sucesso!");
     } catch (error) {
       console.error("Erro ao deletar medicamento:", error);
+    } finally {
+      setShowDeletePopup(false);
+      setPendingDeleteId(null);
     }
   };
 
@@ -82,7 +98,7 @@ function App() {
       header: "Agendar novo medicamento",
       id: null,
     });
-    setFormData({ name: "", color: "", time: "" });
+    setFormData({ name: "", color: "", time: "", status: "pendente" });
     setShowForm(true);
   };
 
@@ -93,7 +109,7 @@ function App() {
       updateMedicines(formDataSettings.id);
     }
     setShowForm(false);
-    setFormData({ name: "", color: "", time: "" });
+    setFormData({ name: "", color: "", time: "", status: "pendente" });
   };
 
   const changeInfo = (key, setter) => (e) => {
@@ -200,6 +216,34 @@ function App() {
               <div onClick={handleFormButton}>
                 <Button text={formDataSettings.buttonText} />
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeletePopup && (
+        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-40 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-[24rem] relative">
+            <h2 className="text-lg font-medium mb-4">Confirmar exclusão</h2>
+            <p className="mb-6 text-gray-700">
+              Tem certeza que deseja excluir este medicamento?
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowDeletePopup(false);
+                  setPendingDeleteId(null);
+                }}
+                className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600"
+              >
+                Excluir
+              </button>
             </div>
           </div>
         </div>

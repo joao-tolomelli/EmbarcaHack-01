@@ -20,21 +20,45 @@ router.post('/', async (req, res) => {
 });
 
 // (PUT) atualizar medicamento
-router.put('/', async (req, res) => {
-  const { id, name, color, time, status } = req.body;
-  const result = await db.query(
-    'UPDATE medicines SET name=$1, color=$2, time=$3, status=$4 WHERE id=$5 RETURNING *',
-    [name, color, time, status, id]
-  );
-  res.json(result.rows[0]);
+router.put('/:id', async (req, res) => {
+  const { name, color, time, status } = req.body;
+  const { id } = req.params;
+
+  try {
+    const result = await db.query(
+      'UPDATE medicines SET name=$1, color=$2, time=$3, status=$4 WHERE id=$5 RETURNING *',
+      [name, color, time, status, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Medicamento não encontrado' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Erro ao atualizar medicamento:', err);
+    res.status(500).json({ error: 'Erro interno no servidor' });
+  }
 });
 
 // (DELETE) deletar medicamento
-router.delete('/', async (req, res) => {
-  const { id } = req.body;
-  await db.query('DELETE FROM medicines WHERE id=$1', [id]);
-  res.sendStatus(204);
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await db.query('DELETE FROM medicines WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Medicamento não encontrado' });
+    }
+
+    res.sendStatus(204); // No Content
+  } catch (err) {
+    console.error('Erro ao deletar medicamento:', err);
+    res.status(500).json({ error: 'Erro interno no servidor' });
+  }
 });
+
 
 // (GET) enviar medicamentos ignorados via MQTT
 router.get('/ignorados', async (req, res) => {
