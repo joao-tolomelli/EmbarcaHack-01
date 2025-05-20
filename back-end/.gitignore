@@ -1,2 +1,8 @@
-node_modules
-.env
+# Ignorar arquivos .env em qualquer diretório
+**/.env
+
+# Ignorar arquivos ca.crt em qualquer diretório
+**/ca.crt
+
+# Ignorar o node_modules
+**/node_modules

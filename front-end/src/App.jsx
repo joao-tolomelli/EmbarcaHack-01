@@ -25,7 +25,7 @@ function App() {
 
   const fetchHomeData = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/medicamentos`);
+      const response = await axios.get(`${BASE_URL}/api/medicines`);
       setMedicines(response.data);
     } catch (error) {
       console.error("Erro ao buscar dados da home:", error);
@@ -34,7 +34,7 @@ function App() {
 
   const scheduleMedicines = async () => {
     try {
-      await axios.post(`${BASE_URL}/medicamentos`, formData);
+      await axios.post(`${BASE_URL}/api/medicines`, formData);
       console.log("Medicamento registrado com sucesso!");
       await fetchHomeData();
     } catch (error) {
@@ -45,7 +45,7 @@ function App() {
   const updateMedicines = async (id) => {
     try {
       const formToSend = { ...formData, id };
-      await axios.put(`${BASE_URL}/medicamentos/${id}`, formToSend);
+      await axios.put(`${BASE_URL}/api/medicines/${id}`, formToSend);
       console.log("Medicamento atualizado com sucesso!");
       await fetchHomeData();
     } catch (error) {
@@ -55,7 +55,7 @@ function App() {
 
   const deleteMedicine = async (id) => {
     try {
-      await axios.delete(`${BASE_URL}/medicamentos/${id}`);
+      await axios.delete(`${BASE_URL}/api/medicines/${id}`);
       await fetchHomeData();
       console.log("Medicamento deletado com sucesso!");
     } catch (error) {
