@@ -112,6 +112,14 @@ function App() {
     setFormData({ name: "", color: "", time: "", status: "pendente" });
   };
 
+  const notifyDelay = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/medicines/ignorados`);
+    } catch (error) {
+      console.error("Erro ao buscar dados da home:", error);
+    }
+  };
+
   const changeInfo = (key, setter) => (e) => {
     setter((prev) => ({
       ...prev,
@@ -172,7 +180,7 @@ function App() {
               <div onClick={handleScheduleClick}>
                 <Button text={"Agendar medicamento"} />
               </div>
-              <div>
+              <div onClick={notifyDelay}>
                 <Button text={"Notificar atrasos"} />
               </div>
             </div>

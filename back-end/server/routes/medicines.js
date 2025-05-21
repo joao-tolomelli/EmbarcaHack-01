@@ -63,6 +63,7 @@ router.delete('/:id', async (req, res) => {
 // (GET) enviar medicamentos ignorados via MQTT
 router.get('/ignorados', async (req, res) => {
   const { rows } = await db.query('SELECT * FROM medicines WHERE status = $1', ['ignorado']);
+  console.log("enviado")
   mqttClient.publish('medicamentos/ignorados', JSON.stringify(rows));
   res.json({ enviado: true, medicamentos: rows });
 });
